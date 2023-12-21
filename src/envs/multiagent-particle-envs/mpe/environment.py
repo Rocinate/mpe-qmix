@@ -87,10 +87,13 @@ class MultiAgentEnv(gym.Env):
         self.world.seed(seed)
 
     def step(self, action_n):
-
         one_hot_actions = []
         for act, acsp in zip(action_n, self.action_space):
             one_hot = np.zeros(acsp.n)
+            
+            # convert act element to int
+            act = act.astype(int)
+
             one_hot[act] = 1.0
             one_hot_actions.append(one_hot)
         action_n = one_hot_actions
@@ -227,7 +230,8 @@ class MultiAgentEnv(gym.Env):
                     else:
                         word = alphabet[np.argmax(other.state.c)]
                     message += (other.name + ' to ' + agent.name + ': ' + word + '   ')
-            print(message)
+            # if len(message) > 0:
+            #     print(message)
 
         for i in range(len(self.viewers)):
             # create viewers (if necessary)
