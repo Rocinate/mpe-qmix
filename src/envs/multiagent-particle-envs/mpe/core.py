@@ -1,3 +1,7 @@
+# 1.增加连通强制力,
+# 1) 对没有和其他agent建立连接的agent, 会受到与他最近的agent之间的拉力
+# 2) 若所有agent均有邻居但未达到全连接, 则对当前所有距离里比通信距离大的最小距离添加拉力
+
 import numpy as np
 
 # physical/external base state of all entites
@@ -125,9 +129,9 @@ class World(object):
             agent.action = agent.action_callback(agent, self)
         # gather forces applied to entities
         p_force = [None] * len(self.entities)
-        # apply agent physical controls
+        # apply agent physical controls  # 根据力量更新力
         p_force = self.apply_action_force(p_force)
-        # apply environment forces
+        # apply environment forces  # 根据碰撞更新力
         p_force = self.apply_environment_force(p_force)
         # integrate physical state
         self.integrate_state(p_force)
@@ -138,7 +142,7 @@ class World(object):
     # gather agent action forces
     def apply_action_force(self, p_force):
         # set applied forces
-        for i,agent in enumerate(self.agents):
+        for i, agent in enumerate(self.agents):
             if agent.movable:
                 noise = np.random.randn(*agent.action.u.shape) * agent.u_noise if agent.u_noise else 0.0
                 p_force[i] = agent.action.u + noise                
@@ -147,8 +151,8 @@ class World(object):
     # gather physical forces acting on entities
     def apply_environment_force(self, p_force):
         # simple (but inefficient) collision response
-        for a,entity_a in enumerate(self.entities):
-            for b,entity_b in enumerate(self.entities):
+        for a, entity_a in enumerate(self.entities):
+            for b, entity_b in enumerate(self.entities):
                 if(b <= a): continue
                 [f_a, f_b] = self.get_collision_force(entity_a, entity_b)
                 if(f_a is not None):
@@ -161,7 +165,7 @@ class World(object):
 
     # integrate physical state
     def integrate_state(self, p_force):
-        for i,entity in enumerate(self.entities):
+        for i, entity in enumerate(self.entities):
             if not entity.movable: continue
             entity.state.p_vel = entity.state.p_vel * (1 - self.damping)
             if (p_force[i] is not None):
@@ -183,12 +187,12 @@ class World(object):
 
     # get collision forces for any contact between two entities
     def get_collision_force(self, entity_a, entity_b):
-        if (not entity_a.collide) or (not entity_b.collide):
+        if (not entity_a.collide) or (not entity_b.collide):  # 两个都是collide时计算碰撞
             return [None, None] # not a collider
         if (entity_a is entity_b):
             return [None, None] # don't collide against itself
         # compute actual distance between entities
-        delta_pos = entity_a.state.p_pos - entity_b.state.p_pos
+        delta_pos = entity_a.state.p_pos - entity_b.state.p_pos  # 切线方向
         dist = np.sqrt(np.sum(np.square(delta_pos)))
         # minimum allowable distance
         dist_min = entity_a.size + entity_b.size

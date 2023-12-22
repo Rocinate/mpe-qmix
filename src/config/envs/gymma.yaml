@@ -1,3 +1,5 @@
+# gym使用该配置文件
+
 env: "gymma"
 
 env_args:

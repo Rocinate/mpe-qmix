@@ -90,10 +90,6 @@ class MultiAgentEnv(gym.Env):
         one_hot_actions = []
         for act, acsp in zip(action_n, self.action_space):
             one_hot = np.zeros(acsp.n)
-            
-            # convert act element to int
-            act = act.astype(int)
-
             one_hot[act] = 1.0
             one_hot_actions.append(one_hot)
         action_n = one_hot_actions

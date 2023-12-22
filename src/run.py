@@ -82,8 +82,7 @@ def evaluate_sequential(args, runner):
 
 
 def run_sequential(args, logger):
-
-    # Init runner so we can get env info
+    # Init runner so we can get env info, default episode runner
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
 
     # Set up schemes and groups here

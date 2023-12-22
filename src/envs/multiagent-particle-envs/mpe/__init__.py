@@ -50,3 +50,20 @@ for N in range(2, 11, 2):
             "observation_callback": scenario.observation,
         },
     )
+
+# Registers the custom coverage environment:
+scenario_name = "simple_coverage"
+gymkey = f"Coverage-v0"
+scenario = scenarios.load(scenario_name + ".py").Scenario()
+world = scenario.make_world()
+
+register(
+    gymkey,
+    entry_point="mpe.environment:MultiAgentEnv",
+    kwargs={
+        "world": world,
+        "reset_callback": scenario.reset_world,
+        "reward_callback": scenario.reward,
+        "observation_callback": scenario.observation,
+    },
+)
