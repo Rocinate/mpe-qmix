@@ -4,6 +4,9 @@
 
 import numpy as np
 
+ENERGY_RADIUS = 0.05
+OBSTACLE_RADIUS = 0.2
+
 # physical/external base state of all entites
 class EntityState(object):
     def __init__(self):
@@ -33,7 +36,7 @@ class Entity(object):
         # name 
         self.name = ''
         # properties:
-        self.size = 0.050
+        self.size = ENERGY_RADIUS
         # entity can move / be pushed
         self.movable = False
         # entity collides with others
@@ -111,6 +114,16 @@ class World(object):
     @property
     def entities(self):
         return self.agents + self.landmarks
+    
+    # return all energy landmark entities in the world
+    @property
+    def energy_landmarks(self):
+        return [landmark for landmark in self.landmarks if landmark.size == ENERGY_RADIUS]
+    
+    # return all obstacle landmark entities in the world
+    @property
+    def obstacle_landmarks(self):
+        return [landmark for landmark in self.landmarks if landmark.size == OBSTACLE_RADIUS]
 
     # return all agents controllable by external policies
     @property

@@ -1,9 +1,17 @@
+# 1.改造step函数, 将reward和done脱离循环, 只执行一次, 并复制到所有agent
+# 2.改造render函数, 在geometry list后增加2*num_agents个geom, 用于刻画uav的覆盖圆和通信圆
+# 3.每轮render都重新导入landmark的颜色已显示当前的覆盖程度
+# 4.改造动作空间维度, 将2*dim_p+1 改为 dim_p维度, u[0] = action[0], u[1] = action[1]
+# 5.对通信模块进行删除
+
 import gym
 from gym import spaces
 from gym.envs.registration import EnvSpec
 import numpy as np
 from mpe.multi_discrete import MultiDiscrete
+from scipy.optimize import minimize
 import copy
+import math
 
 # environment for all agents in the multiagent world
 # currently code assumes that no agents will be created/destroyed at runtime!
@@ -37,6 +45,8 @@ class MultiAgentEnv(gym.Env):
         self.shared_reward = world.collaborative if hasattr(world, 'collaborative') else False
         self.time = 0
 
+        self.safe_control = False
+
         # configure spaces
         self.action_space = []
         self.observation_space = []
@@ -49,6 +59,7 @@ class MultiAgentEnv(gym.Env):
                 u_action_space = spaces.Box(low=-agent.u_range, high=+agent.u_range, shape=(world.dim_p,), dtype=np.float32)
             if agent.movable:
                 total_action_space.append(u_action_space)
+
             # communication action space
             if self.discrete_action_space:
                 c_action_space = spaces.Discrete(world.dim_c)
@@ -56,6 +67,7 @@ class MultiAgentEnv(gym.Env):
                 c_action_space = spaces.Box(low=0.0, high=1.0, shape=(world.dim_c,), dtype=np.float32)
             if not agent.silent:
                 total_action_space.append(c_action_space)
+
             # total action space
             if len(total_action_space) > 1:
                 # all action spaces are discrete, so simplify to MultiDiscrete action space
@@ -99,7 +111,7 @@ class MultiAgentEnv(gym.Env):
         done_n = []
         info_n = {'n': []}
         self.agents = self.world.policy_agents
-        # set action for each agent
+
         for i, agent in enumerate(self.agents):
             self._set_action(action_n[i], agent, self.action_space[i])
         # advance world state
@@ -109,7 +121,6 @@ class MultiAgentEnv(gym.Env):
             obs_n.append(self._get_obs(agent))
             reward_n.append(self._get_reward(agent))
             done_n.append(self._get_done(agent))
-
             info_n['n'].append(self._get_info(agent))
 
         # all agents get total reward in cooperative case
@@ -207,6 +218,15 @@ class MultiAgentEnv(gym.Env):
         # make sure we used all elements of action
         assert len(action) == 0
 
+        # process action
+        # if agent.movable:
+        #     agent.action.u[0] = action[1] - action[2]
+        #     agent.action.u[1] = action[3] - action[4]
+        #     sensitivity = 5.0
+        #     if agent.accel is not None:
+        #         sensitivity = agent.accel
+        #     agent.action.u *= sensitivity
+
     # reset rendering assets
     def _reset_render(self):
         self.render_geoms = None
@@ -255,17 +275,43 @@ class MultiAgentEnv(gym.Env):
                 self.render_geoms.append(geom)
                 self.render_geoms_xform.append(xform)
 
+            #############################################################
+            # 新增代码, 在geoms list中append属于r_cover和r_comm的circle
+            for agent in self.world.agents:
+                geom_cover = rendering.make_circle(agent.r_cover)
+                xform = rendering.Transform()
+                geom_cover.set_color(*agent.cover_color, alpha=0.15)
+                geom_cover.add_attr(xform)
+                self.render_geoms.append(geom_cover)
+                self.render_geoms_xform.append(xform)
+            for agent in self.world.agents:
+                geom_comm = rendering.make_circle(agent.r_comm)
+                xform = rendering.Transform()
+                geom_comm.set_color(*agent.comm_color, alpha=0.15)
+                geom_comm.add_attr(xform)
+                self.render_geoms.append(geom_comm)
+                self.render_geoms_xform.append(xform)
+            # 新增代码, 绘制uav之间的通信线, 若两个通信则画个线, 一共需要
+            
+
             # add geoms to viewer
             for viewer in self.viewers:
                 viewer.geoms = []
                 for geom in self.render_geoms:
                     viewer.add_geom(geom)
 
+        # 新增代码, 每轮显示agent的r_cover, r_comm, poi的是否完成
+        for geom, entity in zip(self.render_geoms, self.world.entities):
+            if 'agent' in entity.name:
+                geom.set_color(*entity.color, alpha=0.5)
+            else:
+                geom.set_color(*entity.color)
+
         results = []
         for i in range(len(self.viewers)):
             from mpe import rendering
             # update bounds to center around agent
-            cam_range = 1
+            cam_range = 1.5
             if self.shared_viewer:
                 pos = np.zeros(self.world.dim_p)
             else:
@@ -274,12 +320,34 @@ class MultiAgentEnv(gym.Env):
             # update geometry positions
             for e, entity in enumerate(self.world.entities):
                 self.render_geoms_xform[e].set_translation(*entity.state.p_pos)
+            # 新增，显示连接状态
+            for e, agent in enumerate(self.agents):
+                self.render_geoms_xform[e+len(self.world.entities)].set_translation(*agent.state.p_pos)
+            for e, agent in enumerate(self.agents):
+                self.render_geoms_xform[e+len(self.world.entities)+len(self.world.agents)].set_translation(*agent.state.p_pos)
+
+            for a, ag_a in enumerate(self.agents):
+                for b, ag_b in enumerate(self.agents):
+                    if b > a:
+                        if np.linalg.norm(ag_a.state.p_pos-ag_b.state.p_pos) < ag_a.r_comm:
+                            self.viewers[i].draw_line(ag_a.state.p_pos, ag_b.state.p_pos)
+
+            # 框
+            self.viewers[i].draw_line([-1, -1], [1, -1])
+            self.viewers[i].draw_line([-1, 1], [1, 1])
+            self.viewers[i].draw_line([-1, -1], [-1, 1])
+            self.viewers[i].draw_line([1, 1], [1, -1])
+
+            # 障碍物
+            for obstacle in self.world.obstacle:
+                self.viewers[i].draw_polygon(obstacle)
+        
             # render to display or array
             results.append(self.viewers[i].render(return_rgb_array = mode=='rgb_array'))
 
-        if self.shared_viewer:
-            assert len(results) == 1
-            return results[0]
+        # if self.shared_viewer:
+        #     assert len(results) == 1
+        #     return results[0]
 
         return results
 
