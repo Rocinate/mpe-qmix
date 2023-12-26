@@ -121,7 +121,10 @@ class MultiAgentEnv(gym.Env):
             obs_n.append(self._get_obs(agent))
             reward_n.append(self._get_reward(agent))
             done_n.append(self._get_done(agent))
-            info_n['n'].append(self._get_info(agent))
+            # info_n['n'].append(self._get_info(agent))
+
+        # get overal info
+        info_n['covreage'] = self.world.coverage_rate
 
         # all agents get total reward in cooperative case
         reward = np.sum(reward_n)
