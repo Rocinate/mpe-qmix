@@ -177,7 +177,7 @@ class Scenario(BaseScenario):
             abs_pos = np.abs(ag.state.p_pos)
             rew -= np.sum(abs_pos[abs_pos > 1] - 1) * 100
             if (abs_pos > 1.2).any():
-                rew -= REWARD["out_of_bound"]
+                rew += REWARD["out_of_bound"]
 
         # 通信惩罚
         if not world.connect_:
@@ -198,7 +198,7 @@ class Scenario(BaseScenario):
 
         return rew
 
-    def observation(self, agent, world):
+    def observation(self, agent, world: CoverageWorld):
         # get positions of all entities in this agent's reference frame
         entity_pos = []
         for entity in world.landmarks:  # world.entities:
@@ -210,6 +210,7 @@ class Scenario(BaseScenario):
         for other in world.agents:
             if other is agent: continue
             other_pos.append(other.state.p_pos - agent.state.p_pos)
+            other_pos.append(other.state.p_vel)
         return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + [observation_obstacle])
 
     def done(self, agent, world):
