@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import random
+import datetime
 import collections
 from os.path import dirname, abspath
 from copy import deepcopy
@@ -89,6 +90,9 @@ if __name__ == '__main__':
     config_dict = recursive_dict_update(config_dict, env_config)
     config_dict = recursive_dict_update(config_dict, alg_config)
 
+    create_time = f"{datetime.datetime.now()}"
+    config_dict["create_time"] = create_time
+
     try:
         map_name = config_dict["env_args"]["map_name"]
     except:
@@ -106,7 +110,8 @@ if __name__ == '__main__':
 
     # Save to disk by default for sacred
     logger.info("Saving to FileStorageObserver in results/sacred.")
-    file_obs_path = os.path.join(results_path, f"sacred/{config_dict['name']}/{map_name}")
+
+    file_obs_path = os.path.join(results_path, f"sacred/{config_dict['name']}/{map_name}/{config_dict['create_time']}")
 
     # ex.observers.append(MongoObserver(db_name="marlbench")) #url='172.31.5.187:27017'))
     ex.observers.append(FileStorageObserver.create(file_obs_path))
