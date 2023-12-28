@@ -24,11 +24,12 @@ REWARD = {
 }
 
 CONFIG = {
-    "r_cover": 0.2,
-    "r_comm": 0.4,
-    "agent_size": 0.15,
+    "r_cover": 0.25,
+    "r_comm": 1.0,
+    "agent_size": 0.02,
     "energy": 5.0,
     "max_speed": 1.0,
+    "comm_r_scale": 0.9
 }
 
 class Scenario(BaseScenario):
@@ -37,7 +38,7 @@ class Scenario(BaseScenario):
         num_energy_landmark = 20
         num_obstacles_landmark = 0
 
-        world = CoverageWorld(num_agents = num_agents,obstacle=obstacle)
+        world = CoverageWorld(num_agents = num_agents, obstacle=obstacle, comm_r_scale=CONFIG["comm_r_scale"], comm_force_scale=CONFIG["comm_force_scale"])
         # set any world properties first
         world.dim_c = 2
 
