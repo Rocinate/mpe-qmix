@@ -20,7 +20,7 @@ REWARD = {
     'unconnected': -50.0,
     'cover': 75.0,
     'done': 1500.0,
-    'out_of_bound': -200.0,
+    'out_of_bound': -100.0,
 }
 
 CONFIG = {
@@ -211,7 +211,6 @@ class Scenario(BaseScenario):
         for other in world.agents:
             if other is agent: continue
             other_pos.append(other.state.p_pos - agent.state.p_pos)
-            other_pos.append(other.state.p_vel)
         return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + [observation_obstacle])
 
     def done(self, agent, world):
