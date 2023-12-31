@@ -40,9 +40,6 @@ class TimeLimit(GymTimeLimit):
         observation, reward, done, info = self.env.step(action)
         self._elapsed_steps += 1
         if self._elapsed_steps >= self._max_episode_steps:
-            info["TimeLimit.truncated"] = not all(done) \
-                if type(done) is list \
-                else not done
             done = len(observation) * [True]
         return observation, reward, done, info
 
@@ -118,8 +115,8 @@ class _GymmaWrapper(MultiAgentEnv):
             reward = sum(reward)
         if type(done) is list:
             done = all(done)
-        # return float(reward), done, info
-        return float(reward), done, {}
+        return float(reward), done, info
+        # return float(reward), done, {}
 
     def get_obs(self):
         """ Returns all agent observations in a list """

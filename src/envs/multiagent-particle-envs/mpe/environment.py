@@ -1,9 +1,3 @@
-# 1.改造step函数, 将reward和done脱离循环, 只执行一次, 并复制到所有agent
-# 2.改造render函数, 在geometry list后增加2*num_agents个geom, 用于刻画uav的覆盖圆和通信圆
-# 3.每轮render都重新导入landmark的颜色已显示当前的覆盖程度
-# 4.改造动作空间维度, 将2*dim_p+1 改为 dim_p维度, u[0] = action[0], u[1] = action[1]
-# 5.对通信模块进行删除
-
 import gym
 from gym import spaces
 from gym.envs.registration import EnvSpec
@@ -109,7 +103,7 @@ class MultiAgentEnv(gym.Env):
         obs_n = []
         reward_n = []
         done_n = []
-        info_n = {'n': []}
+        info_n = {}
         self.agents = self.world.policy_agents
 
         for i, agent in enumerate(self.agents):
@@ -121,10 +115,9 @@ class MultiAgentEnv(gym.Env):
             obs_n.append(self._get_obs(agent))
             reward_n.append(self._get_reward(agent))
             done_n.append(self._get_done(agent))
-            # info_n['n'].append(self._get_info(agent))
 
         # get overal info
-        info_n['covreage'] = self.world.coverage_rate
+        info_n['coverage'] = self.world.coverage_rate
 
         # all agents get total reward in cooperative case
         reward = np.sum(reward_n)

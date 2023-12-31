@@ -38,7 +38,7 @@ class Scenario(BaseScenario):
         num_energy_landmark = 20
         num_obstacles_landmark = 0
 
-        world = CoverageWorld(num_agents = num_agents, obstacle=obstacle, comm_r_scale=CONFIG["comm_r_scale"], comm_force_scale=CONFIG["comm_force_scale"])
+        world = CoverageWorld(num_agents = num_agents, obstacle=obstacle, comm_r_scale=CONFIG["comm_r_scale"])
         # set any world properties first
         world.dim_c = 2
 
@@ -87,7 +87,6 @@ class Scenario(BaseScenario):
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
 
-
         # random properties for landmarks
         for i, landmark in enumerate(world.landmarks):
             landmark.color = np.array([0.25, 0.25, 0.25])
@@ -103,6 +102,9 @@ class Scenario(BaseScenario):
         # for i, landmark in enumerate(world.landmarks):
         #     landmark.state.p_pos = world.np_random.uniform(-1, +1, world.dim_p)
         #     landmark.state.p_vel = np.zeros(world.dim_p)
+        
+        world.clearStatic()
+        
         
         # 随机生成点位，避开障碍区域
         generated = 0

@@ -5,7 +5,6 @@ from mpe.core import Agent, Landmark, World
 class CoverageWorld(World):
     def __init__(self, num_agents = 4, comm_r_scale=1.0, comm_force_scale=0.0, obstacle=None):
         super(CoverageWorld, self).__init__()
-        self.coverage_rate = 0.0
         self.connect = False
         self.num_agents = num_agents
         self.dist_mat = np.zeros((self.num_agents, self.num_agents))
@@ -26,9 +25,25 @@ class CoverageWorld(World):
         self.obstacle_center = self.obstacle.mean(axis=1)
         self.obstacle_range = 1.414 * (self.obstacle[0, :, 0].max() - self.obstacle[0, :, 0].min()) / 2
 
+        # 统计信息
+        self.coverage_rate = 0.0
+        self.episode_length = 0
+        self.connect_time = 0
+        self.collision_time = 0
+        self.outRange_time = 0
+
         self.dt = 0.1
         self.delta = 0.01
         self.sensitivity = 2.0
+
+    def clearStatic(self):
+        self.connect = False
+        self.connect_ = False
+        self.coverage_rate = 0.0
+        self.episode_length = 0
+        self.connect_time = 0
+        self.collision_time = 0
+        self.outRange_time = 0
 
     def isInObstacle(self, pos):
         for index in range(len(self.obstacle)):
