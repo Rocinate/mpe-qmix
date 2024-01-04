@@ -3,11 +3,11 @@ import numpy as np
 from mpe.core import Agent, Landmark, World
 
 class CoverageWorld(World):
-    def __init__(self, num_agents = 4, comm_r_scale=1.0, comm_force_scale=0.0, obstacle=None):
+    def __init__(self, num_agents = 4, num_landmark = 20, comm_r_scale=1.0, comm_force_scale=0.0, obstacle=None):
         super(CoverageWorld, self).__init__()
         self.connect = False
         self.num_agents = num_agents
-        self.num_landmark = 0
+        self.num_landmark = num_landmark
         self.landmarks: List[Landmark] = []
         self.agents: List[Agent] = []
 

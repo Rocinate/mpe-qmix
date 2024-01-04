@@ -1,6 +1,6 @@
 import numpy as np
 from mpe.coverageWord import CoverageWorld
-from mpe.core import Landmark, Agent, ENERGY_RADIUS, OBSTACLE_RADIUS
+from mpe.core import Landmark, Agent, ENERGY_RADIUS
 from mpe.scenario import BaseScenario
 import random
 
@@ -28,32 +28,25 @@ CONFIG = {
     "agent_size": 0.02,
     "energy": 5.0,
     "max_speed": 1.0,
-    "comm_r_scale": 0.9
 }
 
 class Scenario(BaseScenario):
     def make_world(self):
         num_agents = 4
-        num_energy_landmark = 20
+        num_landmark = 20
 
-        world = CoverageWorld(num_agents = num_agents, obstacle=obstacle, comm_r_scale=CONFIG["comm_r_scale"])
+        world = CoverageWorld(
+            num_agents = num_agents, 
+            num_landmark = num_landmark,
+            obstacle = obstacle, 
+        )
+
         # set any world properties first
         world.dim_c = 2
-
         world.collaborative = True
-        # add agents
-        world.agents = [Agent() for i in range(num_agents)]
-        # add landmarks
-        world.landmarks = [Landmark() for i in range(num_energy_landmark)]
-        world.num_landmark = num_energy_landmark
 
-        # for i in range(num_energy_landmark):
-        #     world.landmarks[i].color = np.array([0.25, 0.25, 0.25])
-        #     world.landmarks[i].size = ENERGY_RADIUS
-
-        # for i in range(num_obstacles_landmark):
-        #     world.landmarks[i + num_energy_landmark].color = np.array([0.75, 0.75, 0.75])
-        #     world.landmarks[i + num_energy_landmark].size = OBSTACLE_RADIUS
+        world.agents = [Agent() for _ in range(num_agents)]
+        world.landmarks = [Landmark() for _ in range(num_landmark)]
             
         for i, agent in enumerate(world.agents):
             agent.name = "agent_%d" % i
@@ -95,46 +88,18 @@ class Scenario(BaseScenario):
         
         world.clearStatic()
         
-        
         # 随机生成点位，避开障碍区域
         generated = 0
         while generated < len(world.landmarks):
-            random_pos = np.array([[random.uniform(-0.8, 0.8), random.uniform(-0.8, 0.8)]])
+            random_pos = np.array([random.uniform(-0.8, 0.8), random.uniform(-0.8, 0.8)])
 
-            x, y = random_pos[0]
-            # 位于障碍区域内
-            if world.isInObstacle([x, y]) != -1:
+            if world.isInObstacle(random_pos):
                 continue
 
-            world.landmarks[generated].state.p_pos = random_pos[0]
+            world.landmarks[generated].state.p_pos = random_pos
             generated += 1
 
         world.update_connect()
-
-    def benchmark_data(self, agent: Agent, world: CoverageWorld):
-        rew = 0
-        collisions = 0
-        occupied_landmarks = 0
-        min_dists = 0
-        for l in world.landmarks:
-            dists = [np.sqrt(np.sum(np.square(a.state.p_pos - l.state.p_pos))) for a in world.agents]
-            min_dists += min(dists)
-            rew -= min(dists)
-            if min(dists) < 0.1:
-                occupied_landmarks += 1
-        if agent.collide:
-            for a in world.agents:
-                if self.is_collision(a, agent):
-                    rew -= 1
-                    collisions += 1
-        return (rew, collisions, min_dists, occupied_landmarks)
-
-
-    def is_collision(self, agent1: Agent, agent2: Agent):
-        delta_pos = agent1.state.p_pos - agent2.state.p_pos
-        dist = np.sqrt(np.sum(np.square(delta_pos)))
-        dist_min = agent1.size + agent2.size
-        return True if dist < dist_min else False
 
     def reward(self, agent, world: CoverageWorld):
         rew = 0.0
@@ -146,10 +111,9 @@ class Scenario(BaseScenario):
                 rew -= min(dists)
                 # 距离poi最近的uav, 二者之间的距离作为负奖励, 该poi的energy_to_cover为乘数
             elif poi.just:
-                poi.just = False
-                # rew += self.rew_cover
                 rew += REWARD["cover"] * poi.consume
                 poi.consume = 0.0
+                poi.just = False
 
         # 全部覆盖完成
         if all([poi.done for poi in world.landmarks]):
@@ -171,12 +135,12 @@ class Scenario(BaseScenario):
             for j, ag2 in enumerate(world.agents):
                 if i < j:
                     dist = np.linalg.norm(ag.state.p_pos - ag2.state.p_pos)
-                    if dist < 0.2:
+                    if dist < 0.1:
                         rew += REWARD["collision"]
 
         # 障碍物碰撞惩罚
         for ag in world.agents:
-            if world.isInObstacle(ag.state.p_pos) != -1:
+            if world.isInObstacle(ag.state.p_pos):
                 rew += REWARD["collision"]
 
         return rew
@@ -193,12 +157,12 @@ class Scenario(BaseScenario):
         for other in world.agents:
             if other is agent: continue
             other_pos.append(other.state.p_pos - agent.state.p_pos)
-        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + [observation_obstacle])
+        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + other_pos + entity_pos + [observation_obstacle])
 
     def done(self, agent, world):
         for ag in world.agents:
             abs_pos = np.abs(ag.state.p_pos)
-            if (abs_pos > 1.5).any():
+            if (abs_pos > 1.2).any():
                 return True
         return all([poi.done for poi in world.landmarks])
 
