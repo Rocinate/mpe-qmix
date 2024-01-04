@@ -222,5 +222,10 @@ class Scenario(BaseScenario):
                 return True
         return all([poi.done for poi in world.landmarks])
 
-    def info(self, agent, world):
-        pass
+    # 注入全局信息
+    def info(self, agent, world: CoverageWorld):
+        overall_info = {}
+
+        overall_info["coverage"] = world.coverage_rate
+
+        return overall_info

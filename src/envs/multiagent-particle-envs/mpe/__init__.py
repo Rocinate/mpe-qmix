@@ -65,7 +65,7 @@ register(
         "reset_callback": scenario.reset_world,
         "reward_callback": scenario.reward,
         "observation_callback": scenario.observation,
-        # "info_callback": scenario.info,
+        "info_callback": scenario.info,
         "done_callback": scenario.done,
     },
 )

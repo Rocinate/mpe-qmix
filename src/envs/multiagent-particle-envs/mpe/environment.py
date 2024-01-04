@@ -103,7 +103,6 @@ class MultiAgentEnv(gym.Env):
         obs_n = []
         reward_n = []
         done_n = []
-        info_n = {}
         self.agents = self.world.policy_agents
 
         for i, agent in enumerate(self.agents):
@@ -115,9 +114,8 @@ class MultiAgentEnv(gym.Env):
             obs_n.append(self._get_obs(agent))
             reward_n.append(self._get_reward(agent))
             done_n.append(self._get_done(agent))
-
-        # get overal info
-        info_n['coverage'] = self.world.coverage_rate
+        # overall info, just need to pass one agent's info
+        info_n = self._get_info(self.agents[0])
 
         # all agents get total reward in cooperative case
         reward = np.sum(reward_n)
@@ -213,15 +211,7 @@ class MultiAgentEnv(gym.Env):
             action = action[1:]
         # make sure we used all elements of action
         assert len(action) == 0
-
-        # process action
-        # if agent.movable:
-        #     agent.action.u[0] = action[1] - action[2]
-        #     agent.action.u[1] = action[3] - action[4]
-        #     sensitivity = 5.0
-        #     if agent.accel is not None:
-        #         sensitivity = agent.accel
-        #     agent.action.u *= sensitivity
+        
 
     # reset rendering assets
     def _reset_render(self):
