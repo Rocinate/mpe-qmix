@@ -2,6 +2,7 @@ from envs import REGISTRY as env_REGISTRY
 from functools import partial
 from components.episode_buffer import EpisodeBatch
 import numpy as np
+import time
 
 
 class EpisodeRunner:
@@ -70,6 +71,7 @@ class EpisodeRunner:
 
             if test_mode and self.args.render:
                 self.env.render()
+                # time.sleep(0.1)
             episode_return += reward
 
             post_transition_data = {

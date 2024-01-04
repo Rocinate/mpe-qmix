@@ -263,20 +263,21 @@ class MultiAgentEnv(gym.Env):
 
             #############################################################
             # 新增代码, 在geoms list中append属于r_cover和r_comm的circle
-            for agent in self.world.agents:
-                geom_cover = rendering.make_circle(agent.r_cover)
-                xform = rendering.Transform()
-                geom_cover.set_color(*agent.cover_color, alpha=0.15)
-                geom_cover.add_attr(xform)
-                self.render_geoms.append(geom_cover)
-                self.render_geoms_xform.append(xform)
-            for agent in self.world.agents:
-                geom_comm = rendering.make_circle(agent.r_comm)
-                xform = rendering.Transform()
-                geom_comm.set_color(*agent.comm_color, alpha=0.15)
-                geom_comm.add_attr(xform)
-                self.render_geoms.append(geom_comm)
-                self.render_geoms_xform.append(xform)
+            if hasattr(self.world, 'obstacle'):
+                for agent in self.world.agents:
+                    geom_cover = rendering.make_circle(agent.r_cover)
+                    xform = rendering.Transform()
+                    geom_cover.set_color(*agent.cover_color, alpha=0.15)
+                    geom_cover.add_attr(xform)
+                    self.render_geoms.append(geom_cover)
+                    self.render_geoms_xform.append(xform)
+                for agent in self.world.agents:
+                    geom_comm = rendering.make_circle(agent.r_comm)
+                    xform = rendering.Transform()
+                    geom_comm.set_color(*agent.comm_color, alpha=0.15)
+                    geom_comm.add_attr(xform)
+                    self.render_geoms.append(geom_comm)
+                    self.render_geoms_xform.append(xform)
 
             # add geoms to viewer
             for viewer in self.viewers:
@@ -305,12 +306,12 @@ class MultiAgentEnv(gym.Env):
             for e, entity in enumerate(self.world.entities):
                 self.render_geoms_xform[e].set_translation(*entity.state.p_pos)
             # 新增，显示连接状态
-            for e, agent in enumerate(self.agents):
-                self.render_geoms_xform[e+len(self.world.entities)].set_translation(*agent.state.p_pos)
-            for e, agent in enumerate(self.agents):
-                self.render_geoms_xform[e+len(self.world.entities)+len(self.world.agents)].set_translation(*agent.state.p_pos)
+            # for e, agent in enumerate(self.agents):
+            #     self.render_geoms_xform[e+len(self.world.entities)].set_translation(*agent.state.p_pos)
+            # for e, agent in enumerate(self.agents):
+            #     self.render_geoms_xform[e+len(self.world.entities)+len(self.world.agents)].set_translation(*agent.state.p_pos)
 
-            if self.agents.state.r_comm != None:
+            if hasattr(self.world, 'obstacle'):
                 for a, ag_a in enumerate(self.agents):
                     for b, ag_b in enumerate(self.agents):
                         if b > a:
@@ -324,12 +325,13 @@ class MultiAgentEnv(gym.Env):
             self.viewers[i].draw_line([1, 1], [1, -1])
 
             # 障碍物
-            if self.world.obstacle:
+            if hasattr(self.world, 'obstacle'):
                 for xmin, ymin, xmax, ymax in self.world.obstacle:
                     self.viewers[i].draw_polygon([[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin]])
         
             # render to display or array
             results.append(self.viewers[i].render(return_rgb_array = mode=='rgb_array'))
+        
 
         # if self.shared_viewer:
         #     assert len(results) == 1
