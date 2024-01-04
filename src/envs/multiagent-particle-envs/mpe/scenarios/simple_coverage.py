@@ -2,20 +2,19 @@ import numpy as np
 from mpe.coverageWord import CoverageWorld
 from mpe.core import Landmark, Agent, ENERGY_RADIUS, OBSTACLE_RADIUS
 from mpe.scenario import BaseScenario
+import random
 
+# 改为使用左右两点进行表示，这样可以大幅缩小障碍物的表示空间
+# 【xmin, ymin, xmax, ymax]，左下角和右上角
 obstacle = np.array([
-    [[0.1, 0.1], [0.1, 0.3], [0.3, 0.3], [0.3, 0.1]],
-    [[-0.1, -0.1], [-0.1, -0.3], [-0.3, -0.3], [-0.3, -0.1]]
+    [0.1, 0.1, 0.3, 0.3],
+    [-0.3, -0.3, -0.1, -0.1]
 ])
 
+# 避免每次observation都需要reshape一次
 observation_obstacle = obstacle.reshape(-1)
 
 REWARD = {
-    # 'collision': -1,
-    # 'energy': 1,
-    # 'obstacle': -1,
-    # 'out_of_bound': -1,
-    # 'cover': 0.1
     'collision': -30.0,
     'unconnected': -50.0,
     'cover': 75.0,
@@ -36,7 +35,6 @@ class Scenario(BaseScenario):
     def make_world(self):
         num_agents = 4
         num_energy_landmark = 20
-        num_obstacles_landmark = 0
 
         world = CoverageWorld(num_agents = num_agents, obstacle=obstacle, comm_r_scale=CONFIG["comm_r_scale"])
         # set any world properties first
@@ -46,7 +44,8 @@ class Scenario(BaseScenario):
         # add agents
         world.agents = [Agent() for i in range(num_agents)]
         # add landmarks
-        world.landmarks = [Landmark() for i in range(num_energy_landmark + num_obstacles_landmark)]
+        world.landmarks = [Landmark() for i in range(num_energy_landmark)]
+        world.num_landmark = num_energy_landmark
 
         # for i in range(num_energy_landmark):
         #     world.landmarks[i].color = np.array([0.25, 0.25, 0.25])
@@ -93,15 +92,6 @@ class Scenario(BaseScenario):
             landmark.energy = 0.0
             landmark.consume = 0.0
             landmark.done, landmark.just = False, False
-
-        # # set random initial states
-        # for agent in world.agents:
-        #     agent.state.p_pos = world.np_random.uniform(-1, +1, world.dim_p)
-        #     agent.state.p_vel = np.zeros(world.dim_p)
-        #     agent.state.c = np.zeros(world.dim_c)
-        # for i, landmark in enumerate(world.landmarks):
-        #     landmark.state.p_pos = world.np_random.uniform(-1, +1, world.dim_p)
-        #     landmark.state.p_vel = np.zeros(world.dim_p)
         
         world.clearStatic()
         
@@ -109,7 +99,7 @@ class Scenario(BaseScenario):
         # 随机生成点位，避开障碍区域
         generated = 0
         while generated < len(world.landmarks):
-            random_pos = np.random.uniform(-0.8, 0.8, (1, world.dim_p))
+            random_pos = np.array([[random.uniform(-0.8, 0.8), random.uniform(-0.8, 0.8)]])
 
             x, y = random_pos[0]
             # 位于障碍区域内
@@ -147,16 +137,6 @@ class Scenario(BaseScenario):
         return True if dist < dist_min else False
 
     def reward(self, agent, world: CoverageWorld):
-        # Agents are rewarded based on minimum agent distance to each landmark, penalized for collisions
-        # rew = 0
-        # for l in world.landmarks:
-        #     dists = [np.sqrt(np.sum(np.square(a.state.p_pos - l.state.p_pos))) for a in world.agents]
-        #     rew -= min(dists)
-        # if agent.collide:
-        #     for a in world.agents:
-        #         if self.is_collision(a, agent):
-        #             rew -= 1
-        # return rew
         rew = 0.0
 
         # 覆盖奖惩
@@ -183,7 +163,7 @@ class Scenario(BaseScenario):
                 rew += REWARD["out_of_bound"]
 
         # 通信惩罚
-        if not world.connect_:
+        if not world.connect:
             rew += REWARD["unconnected"]
 
         # 相互碰撞惩罚

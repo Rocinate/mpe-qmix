@@ -7,23 +7,19 @@ class CoverageWorld(World):
         super(CoverageWorld, self).__init__()
         self.connect = False
         self.num_agents = num_agents
-        self.dist_mat = np.zeros((self.num_agents, self.num_agents))
-        self.adj_mat = np.zeros((self.num_agents, self.num_agents))
+        self.num_landmark = 0
         self.landmarks: List[Landmark] = []
         self.agents: List[Agent] = []
 
         # 对连通保持聚合力的修正
-        self.contact_force *= comm_force_scale  # 修正拉力倍数
+        self.contact_force *= comm_force_scale  # 修正拉力倍数，正常情况下都是0
         self.comm_r_scale = comm_r_scale  # 产生拉力的半径 = r_comm * comm_r_scale
 
-        # 在comm_r_scale修正下的强连通和邻接矩阵
-        self.connect_ = False  # 用于施加规则拉力的强连通指示
+        # 距离矩阵，用于连通计算
+        self.dist_mat = np.zeros((self.num_agents, self.num_agents))
 
         # 障碍物信息
         self.obstacle = obstacle
-        self.obstacle_gap = 0.05
-        self.obstacle_center = self.obstacle.mean(axis=1)
-        self.obstacle_range = 1.414 * (self.obstacle[0, :, 0].max() - self.obstacle[0, :, 0].min()) / 2
 
         # 统计信息
         self.coverage_rate = 0.0
@@ -31,7 +27,8 @@ class CoverageWorld(World):
         self.connect_time = 0
         self.collision_time = 0
         self.outRange_time = 0
-
+        
+        # 训练参数
         self.dt = 0.1
         self.delta = 0.01
         self.sensitivity = 2.0
@@ -45,25 +42,24 @@ class CoverageWorld(World):
         self.collision_time = 0
         self.outRange_time = 0
 
+    # 假设所有障碍物都是正方形（长方形组成的），异形障碍物可由这两个基本元素组成
     def isInObstacle(self, pos):
-        for index in range(len(self.obstacle)):
-            if np.linalg.norm(pos - self.obstacle_center[index]) < (self.obstacle_gap + self.agents[0].size + self.obstacle_range):
-                return index
-        return -1
+        x, y = pos
+        result = (self.obstacle[:, 0] < x) & (self.obstacle[:, 2] > x) & (self.obstacle[:, 1] < y) & (self.obstacle[:, 3] > y)
+        return np.any(result)
 
     def step(self):
-        # step函数中, 不计算poi受力与位移, 增加保持连通所需的拉力, 规则如下:
-        self.update_connect()  # 获得adj_mat(_), dist_mat, connect(_)
+        self.update_connect()
         self.update_collision()
 
         p_force = [None for _ in range(len(self.agents))]
         p_force = self.apply_action_force(p_force)
 
-        tmp_pos = self.check_state(p_force)
-        isconn = self.check_connect(tmp_pos)
-        if not isconn:
-            if self.contact_force > 0:
-                p_force = self.apply_connect_force(p_force)
+        # tmp_pos = self.check_state(p_force)
+        # isconn = self.check_connect(tmp_pos)
+        # if not isconn:
+        #     if self.contact_force > 0:
+        #         p_force = self.apply_connect_force(p_force)
 
         self.integrate_state(p_force)
 
@@ -76,7 +72,7 @@ class CoverageWorld(World):
         # 检查出界
         for ag in self.agents:
             abs_pos = np.abs(ag.state.p_pos)
-            if (abs_pos > 1.2).any():
+            if (abs_pos > 1).any():
                 self.outRange = True
                 break
 
@@ -87,7 +83,7 @@ class CoverageWorld(World):
             for j, ag2 in enumerate(self.agents):
                 if i < j:
                     dist = np.linalg.norm(ag.state.p_pos - ag2.state.p_pos)
-                    if dist < 0.2:
+                    if dist < 0.1:
                         self.collision = True
                         break
 
@@ -99,29 +95,7 @@ class CoverageWorld(World):
                     break
 
     def update_connect(self):
-        # 更新邻接矩阵adj_mat和adj_mat_, adj对角线为0, dist对角线为1e5
-        self.adj_mat = np.zeros([len(self.agents), len(self.agents)])
-        self.adj_mat_ = np.zeros([len(self.agents), len(self.agents)])
-        for a, agent_a in enumerate(self.agents):
-            for b, agent_b in enumerate(self.agents):
-                self.dist_mat[a, b] = np.linalg.norm(agent_a.state.p_pos - agent_b.state.p_pos)
-                if self.dist_mat[a, b] < agent_a.r_comm:
-                    self.adj_mat[a, b] = 1
-                    if self.dist_mat[a, b] < self.comm_r_scale * agent_a.r_comm:
-                        self.adj_mat_[a, b] = 1
-            self.dist_mat[a, a] = 1e5
-            self.adj_mat[a, a] = 0
-            self.adj_mat_[a, a] = 0
-
-        # 更新connect和connect_
-        connect_mat = [np.eye(len(self.agents))]
-        connect_mat_ = [np.eye(len(self.agents))]
-        for _ in range(len(self.agents) - 1):
-            connect_mat.append(np.matmul(connect_mat[-1], self.adj_mat))
-            connect_mat_.append(np.matmul(connect_mat[-1], self.adj_mat_))
-
-        self.connect = True if (sum(connect_mat) > 0).all() else False
-        self.connect_ = True if (sum(connect_mat_) > 0).all() else False
+        self.connect = True
 
     def apply_action_force(self, p_force):
         for i, agent in enumerate(self.agents):
@@ -185,8 +159,8 @@ class CoverageWorld(World):
                                                                           entity.state.p_vel[1])) * entity.max_speed
             entity.state.p_pos += entity.state.p_vel * self.dt
 
+    # 将p_force输入给系统，输出下一步的位置
     def check_state(self, p_force):
-        # 将p_force输入给系统，先测试一下是否会失去连通
         tmp_vel = [ag.state.p_vel * 1 for ag in self.agents]
         tmp_pos = [ag.state.p_pos * 1 for ag in self.agents]
         for i, agent in enumerate(self.agents):
@@ -218,6 +192,7 @@ class CoverageWorld(World):
 
     def update_energy(self):
         num_done = 0
+
         for poi in self.landmarks:
             if poi.done:
                 num_done += 1
@@ -243,6 +218,5 @@ class CoverageWorld(World):
                     poi.done = True
                     poi.just = True
                     num_done += 1
-                    poi.color = np.array([0.25, 1.0, 0.25])
                 poi.color = np.array([0.25, 0.25 + poi.energy / poi.m_energy * 0.75, 0.25])
-        self.coverage_rate = num_done / len(self.landmarks)
+        self.coverage_rate = num_done / self.num_landmark
