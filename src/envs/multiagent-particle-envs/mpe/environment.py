@@ -325,8 +325,8 @@ class MultiAgentEnv(gym.Env):
             self.viewers[i].draw_line([1, 1], [1, -1])
 
             # 障碍物
-            for obstacle in self.world.obstacle:
-                self.viewers[i].draw_polygon(obstacle)
+            for xmin, ymin, xmax, ymax in self.world.obstacle:
+                self.viewers[i].draw_polygon([[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin]])
         
             # render to display or array
             results.append(self.viewers[i].render(return_rgb_array = mode=='rgb_array'))

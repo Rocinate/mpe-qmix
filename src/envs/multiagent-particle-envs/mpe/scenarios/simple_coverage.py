@@ -11,8 +11,13 @@ obstacle = np.array([
     [-0.3, -0.3, -0.1, -0.1]
 ])
 
+obstancle_full = np.array([
+    [[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin]]
+    for xmin, ymin, xmax, ymax in obstacle
+])
+
 # 避免每次observation都需要reshape一次
-observation_obstacle = obstacle.reshape(-1)
+observation_obstacle = obstancle_full.reshape(-1)
 
 REWARD = {
     'collision': -30.0,
@@ -26,7 +31,7 @@ CONFIG = {
     "r_cover": 0.25,
     "r_comm": 1.0,
     "agent_size": 0.02,
-    "landmark_size": 0.05,
+    "landmark_size": 0.02,
     "energy": 5.0,
     "max_speed": 1.0,
 }

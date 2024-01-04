@@ -1,2 +1,2 @@
 #!/bin/zsh
-bin/interactive.py --scenario simple_spread.py
+bin/interactive.py --scenario simple_coverage.py
