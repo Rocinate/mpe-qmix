@@ -204,7 +204,6 @@ class CoverageWorld(World):
                         # poi.energy += 1
                         # TODO: 調整覆蓋能量大小，當前最大可以噠到4
                         poi.consume += 2 * np.exp(-dist ** 2 / agent.r_cover ** 2) # 论文公式6, Sc = 2
-                        # poi.consume += 1  # 论文公式6, Sc = 2
 
                 if poi.consume > 0.0:
                     # 限制覆蓋能量大小，最大為m_energy
