@@ -1,6 +1,6 @@
 import numpy as np
 from mpe.coverageWord import CoverageWorld
-from mpe.core import Landmark, Agent, ENERGY_RADIUS
+from mpe.core import Landmark, Agent
 from mpe.scenario import BaseScenario
 import random
 
@@ -26,6 +26,7 @@ CONFIG = {
     "r_cover": 0.25,
     "r_comm": 1.0,
     "agent_size": 0.02,
+    "landmark_size": 0.05,
     "energy": 5.0,
     "max_speed": 1.0,
 }
@@ -61,7 +62,7 @@ class Scenario(BaseScenario):
             landmark.name = "poi_%d" % i
             landmark.collide = False
             landmark.movable = False
-            landmark.size = ENERGY_RADIUS
+            landmark.size = CONFIG["landmark_size"]
             landmark.m_energy = CONFIG["energy"]
 
         # make initial conditions
