@@ -305,29 +305,31 @@ class MultiAgentEnv(gym.Env):
             # update geometry positions
             for e, entity in enumerate(self.world.entities):
                 self.render_geoms_xform[e].set_translation(*entity.state.p_pos)
-            # 新增，显示连接状态
-            # for e, agent in enumerate(self.agents):
-            #     self.render_geoms_xform[e+len(self.world.entities)].set_translation(*agent.state.p_pos)
-            # for e, agent in enumerate(self.agents):
-            #     self.render_geoms_xform[e+len(self.world.entities)+len(self.world.agents)].set_translation(*agent.state.p_pos)
 
+            # 新增，显示连接状态
             if hasattr(self.world, 'obstacle'):
+                # range
+                for e, agent in enumerate(self.agents):
+                    self.render_geoms_xform[e+len(self.world.entities)].set_translation(*agent.state.p_pos)
+                for e, agent in enumerate(self.agents):
+                    self.render_geoms_xform[e+len(self.world.entities)+len(self.world.agents)].set_translation(*agent.state.p_pos)
+
+                # connect status
                 for a, ag_a in enumerate(self.agents):
                     for b, ag_b in enumerate(self.agents):
                         if b > a:
                             if np.linalg.norm(ag_a.state.p_pos-ag_b.state.p_pos) < ag_a.r_comm:
                                 self.viewers[i].draw_line(ag_a.state.p_pos, ag_b.state.p_pos)
 
+                # draw obstacle    
+                for xmin, ymin, xmax, ymax in self.world.obstacle:
+                    self.viewers[i].draw_polygon([[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin]])
+
             # 框
             self.viewers[i].draw_line([-1, -1], [1, -1])
             self.viewers[i].draw_line([-1, 1], [1, 1])
             self.viewers[i].draw_line([-1, -1], [-1, 1])
-            self.viewers[i].draw_line([1, 1], [1, -1])
-
-            # 障碍物
-            if hasattr(self.world, 'obstacle'):
-                for xmin, ymin, xmax, ymax in self.world.obstacle:
-                    self.viewers[i].draw_polygon([[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin]])
+            self.viewers[i].draw_line([1, 1], [1, -1])                
         
             # render to display or array
             results.append(self.viewers[i].render(return_rgb_array = mode=='rgb_array'))
