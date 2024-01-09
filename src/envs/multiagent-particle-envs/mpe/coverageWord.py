@@ -49,7 +49,7 @@ class CoverageWorld(World):
         return np.any(result)
 
     def step(self):
-        self.update_connect()
+        # self.update_connect()
         self.update_collision()
 
         p_force = [None for _ in range(len(self.agents))]
@@ -66,7 +66,8 @@ class CoverageWorld(World):
         self.update_energy()
 
     def update_collision(self):
-        self.collision = False
+        self.collisionWithOther = False
+        self.collisionWithObstacle = False
         self.outRange = False
 
         # 检查出界
@@ -78,21 +79,20 @@ class CoverageWorld(World):
 
         # 检查无人机碰撞
         for i, ag in enumerate(self.agents):
-            if self.collision:
+            if self.collisionWithOther:
                 break
             for j, ag2 in enumerate(self.agents):
                 if i < j:
                     dist = np.linalg.norm(ag.state.p_pos - ag2.state.p_pos)
                     if dist < 0.1:
-                        self.collision = True
+                        self.collisionWithOther = True
                         break
 
         # 检查障碍物碰撞
-        if not self.collision:
-            for ag in self.agents:
-                if self.isInObstacle(ag.state.p_pos) != -1:
-                    self.collision = True
-                    break
+        for ag in self.agents:
+            if self.isInObstacle(ag.state.p_pos) != -1:
+                self.collisionWithObstacle = True
+                break
 
     def update_connect(self):
         self.connect = True

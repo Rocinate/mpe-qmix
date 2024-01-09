@@ -19,12 +19,20 @@ obstancle_full = np.array([
 # 避免每次observation都需要reshape一次
 observation_obstacle = obstancle_full.reshape(-1)
 
+# 负奖励（不太清楚是不是会被Qmix的约束影响到）
+# REWARD = {
+#     'collision': -30.0,
+#     'unconnected': -50.0,
+#     'cover': 75.0,
+#     'done': 1500.0,
+#     'out_of_bound': -100.0,
+# }
+
 REWARD = {
-    'collision': -30.0,
-    'unconnected': -50.0,
-    'cover': 75.0,
-    'done': 1500.0,
-    'out_of_bound': -100.0,
+    "in_range": 5,
+    "cover": 1,
+    "done": 10,
+    "no_collaps": 2
 }
 
 CONFIG = {
@@ -125,29 +133,38 @@ class Scenario(BaseScenario):
         if all([poi.done for poi in world.landmarks]):
             rew += REWARD["done"]
 
-        # 出界惩罚
-        for ag in world.agents:
-            abs_pos = np.abs(ag.state.p_pos)
-            rew -= np.sum(abs_pos[abs_pos > 1] - 1) * 100
-            if (abs_pos > 1.2).any():
-                rew += REWARD["out_of_bound"]
+        # 出界奖励
+        if world.outRange == False:
+            rew += REWARD["in_range"]
+        # for ag in world.agents:
+        #     abs_pos = np.abs(ag.state.p_pos)
+        #     rew -= np.sum(abs_pos[abs_pos > 1] - 1) * 100
+        #     if (abs_pos > 1.2).any():
+        #         rew += REWARD["out_of_bound"]
 
         # 通信惩罚
-        if not world.connect:
-            rew += REWARD["unconnected"]
+        # if not world.connect:
+        #     rew += REWARD["unconnected"]
+
+        # 无碰撞奖励
+        if world.collisionWithOther == False:
+            rew += REWARD["no_collaps"]
+        
+        if world.collisionWithObstacle == False:
+            rew += REWARD["no_collaps"]
 
         # 相互碰撞惩罚
-        for i, ag in enumerate(world.agents):
-            for j, ag2 in enumerate(world.agents):
-                if i < j:
-                    dist = np.linalg.norm(ag.state.p_pos - ag2.state.p_pos)
-                    if dist < 0.1:
-                        rew += REWARD["collision"]
+        # for i, ag in enumerate(world.agents):
+        #     for j, ag2 in enumerate(world.agents):
+        #         if i < j:
+        #             dist = np.linalg.norm(ag.state.p_pos - ag2.state.p_pos)
+        #             if dist < 0.1:
+        #                 rew += REWARD["collision"]
 
         # 障碍物碰撞惩罚
-        for ag in world.agents:
-            if world.isInObstacle(ag.state.p_pos):
-                rew += REWARD["collision"]
+        # for ag in world.agents:
+        #     if world.isInObstacle(ag.state.p_pos):
+        #         rew += REWARD["collision"]
 
         return rew
 

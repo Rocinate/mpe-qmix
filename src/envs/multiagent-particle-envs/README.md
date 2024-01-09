@@ -35,7 +35,6 @@ Used in the paper [Multi-Agent Actor-Critic for Mixed Cooperative-Competitive En
     called before every episode (including after make_world() before the first episode)
     3) `reward()`: defines the reward function for a given agent
     4) `observation()`: defines the observation space of a given agent
-    5) (optional) `benchmark_data()`: provides diagnostic data for policies trained on the environment (e.g. evaluation metrics)
 
 ### Creating new environments
 
