@@ -37,6 +37,10 @@ CONFIG = {
 
 class Scenario(BaseScenario):
     def make_world(self):
+        # ugly implement, try to check if scared cout can catch this
+        print(obstacle)
+        print(REWARD, CONFIG)
+
         num_agents = 4
         num_landmark = 20
 
