@@ -17,16 +17,7 @@ obstancle_full = np.array([
 ])
 
 # 避免每次observation都需要reshape一次
-observation_obstacle = obstancle_full.reshape(-1)
-
-# 负奖励（不太清楚是不是会被Qmix的约束影响到）
-# REWARD = {
-#     'collision': -30.0,
-#     'unconnected': -50.0,
-#     'cover': 75.0,
-#     'done': 1500.0,
-#     'out_of_bound': -100.0,
-# }
+observation_obstacle = obstacle.reshape(-1)
 
 REWARD = {
     "in_range": 5,
@@ -136,11 +127,6 @@ class Scenario(BaseScenario):
         # 出界奖励
         if world.outRange == False:
             rew += REWARD["in_range"]
-        # for ag in world.agents:
-        #     abs_pos = np.abs(ag.state.p_pos)
-        #     rew -= np.sum(abs_pos[abs_pos > 1] - 1) * 100
-        #     if (abs_pos > 1.2).any():
-        #         rew += REWARD["out_of_bound"]
 
         # 通信惩罚
         # if not world.connect:
