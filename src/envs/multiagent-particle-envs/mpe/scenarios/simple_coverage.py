@@ -20,15 +20,15 @@ obstancle_full = np.array([
 observation_obstacle = obstacle.reshape(-1)
 
 REWARD = {
-    "in_range": 5,
+    "in_range": 2,
     "cover": 1,
-    "done": 10,
+    "done": 5,
     "no_collaps": 2
 }
 
 CONFIG = {
     "r_cover": 0.25,
-    "r_comm": 1.0,
+    "r_comm": 0.8,
     "agent_size": 0.02,
     "landmark_size": 0.02,
     "energy": 5.0,
