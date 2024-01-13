@@ -23,7 +23,8 @@ REWARD = {
     "in_range": 2,
     "cover": 1,
     "done": 5,
-    "no_collaps": 2
+    "no_collaps": 2,
+    "not_found": 0.1
 }
 
 CONFIG = {
@@ -108,6 +109,7 @@ class Scenario(BaseScenario):
             landmark.color = np.array([0.25, 0.25, 0.25])
             landmark.energy = 0.0
             landmark.consume = 0.0
+            landmark.found = False
             landmark.done, landmark.just = False, False
         
         world.clearStatic()
@@ -130,7 +132,9 @@ class Scenario(BaseScenario):
 
         # 覆盖奖惩
         for poi in world.landmarks:
-            if not poi.done:
+            if not poi.found:
+                rew -= REWARD["not_found"]
+            elif not poi.done:
                 dists = [np.linalg.norm(ag.state.p_pos - poi.state.p_pos) for ag in world.agents]
                 rew -= min(dists)
                 # 距离poi最近的uav, 二者之间的距离作为负奖励, 该poi的energy_to_cover为乘数
@@ -177,8 +181,12 @@ class Scenario(BaseScenario):
         # get positions of all entities in this agent's reference frame
         entity_pos = []
         for entity in world.landmarks:  # world.entities:
-            entity_pos.append(entity.state.p_pos - agent.state.p_pos)
-            entity_pos.append([max(entity.m_energy - entity.energy, 0)])
+            if entity.found == False:
+                entity_pos.append([0, 0])
+                entity_pos.append([entity.m_energy])
+            else:
+                entity_pos.append(entity.state.p_pos - agent.state.p_pos)
+                entity_pos.append([max(entity.m_energy - entity.energy, 0)])
 
         # communication of all other agents
         other_pos = []

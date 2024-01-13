@@ -10,7 +10,6 @@ class CoverageWorld(World):
         self.num_landmark = num_landmark
         self.landmarks: List[Landmark] = []
         self.agents: List[Agent] = []
-        self.found = [False for _ in range(num_landmark)]
 
         # 对连通保持聚合力的修正
         self.contact_force *= comm_force_scale  # 修正拉力倍数，正常情况下都是0
@@ -205,6 +204,7 @@ class CoverageWorld(World):
                 for agent in self.agents:
                     dist = np.linalg.norm(poi.state.p_pos - agent.state.p_pos)
                     if dist <= agent.r_cover:
+                        poi.found = True
                         # poi.energy += (1 - dist / agent.r_cover)  # power随半径线性减少
                         # poi.energy += 1
                         # TODO: 調整覆蓋能量大小，當前最大可以噠到4
