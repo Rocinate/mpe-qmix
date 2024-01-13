@@ -72,7 +72,7 @@ class Scenario(BaseScenario):
             agent.max_speed = CONFIG["slow_speed"]
 
         # detect agent
-        for agent in enumerate(world.agents[-CONFIG["num_detect"]:]):
+        for agent in world.agents[-CONFIG["num_detect"]:]:
             agent.r_cover = CONFIG["big_cover"]
             agent.max_speed = CONFIG["fast_speed"]
 
