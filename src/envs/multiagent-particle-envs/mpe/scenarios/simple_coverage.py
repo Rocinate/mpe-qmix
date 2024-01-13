@@ -184,5 +184,8 @@ class Scenario(BaseScenario):
         overall_info = {}
 
         overall_info["coverage"] = world.coverage_rate
+        overall_info["outRate"] = world.outRange_time / world.episode_length
+        overall_info["collisionWithOther"] = world.collisionWithOtherTime / world.episode_length
+        overall_info["collisionWithObstacle"] = world.collisionWithObstacleTime / world.episode_length
 
         return overall_info

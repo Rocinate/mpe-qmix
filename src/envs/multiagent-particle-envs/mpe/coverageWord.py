@@ -22,10 +22,10 @@ class CoverageWorld(World):
         self.obstacle = obstacle
 
         # 统计信息
-        self.coverage_rate = 0.0
         self.episode_length = 0
         self.connect_time = 0
-        self.collision_time = 0
+        self.collisionWithObstacleTime = 0
+        self.collisionWithOtherTime = 0
         self.outRange_time = 0
         
         # 训练参数
@@ -36,10 +36,10 @@ class CoverageWorld(World):
     def clearStatic(self):
         self.connect = False
         self.connect_ = False
-        self.coverage_rate = 0.0
         self.episode_length = 0
         self.connect_time = 0
-        self.collision_time = 0
+        self.collisionWithObstacleTime = 0
+        self.collisionWithOtherTime = 0
         self.outRange_time = 0
 
     # 假设所有障碍物都是正方形（长方形组成的），异形障碍物可由这两个基本元素组成
@@ -51,6 +51,7 @@ class CoverageWorld(World):
     def step(self):
         # self.update_connect()
         self.update_collision()
+        self.episode_length += 1
 
         p_force = [None for _ in range(len(self.agents))]
         p_force = self.apply_action_force(p_force)
@@ -75,6 +76,7 @@ class CoverageWorld(World):
             abs_pos = np.abs(ag.state.p_pos)
             if (abs_pos > 1).any():
                 self.outRange = True
+                self.outRange_time += 1
                 break
 
         # 检查无人机碰撞
@@ -86,12 +88,14 @@ class CoverageWorld(World):
                     dist = np.linalg.norm(ag.state.p_pos - ag2.state.p_pos)
                     if dist < 0.1:
                         self.collisionWithOther = True
+                        self.collisionWithOtherTime += 1
                         break
 
         # 检查障碍物碰撞
         for ag in self.agents:
             if self.isInObstacle(ag.state.p_pos) != -1:
                 self.collisionWithObstacle = True
+                self.collisionWithObstacleTime += 1
                 break
 
     def update_connect(self):
