@@ -93,7 +93,7 @@ class CoverageWorld(World):
 
         # 检查障碍物碰撞
         for ag in self.agents:
-            if self.isInObstacle(ag.state.p_pos) != -1:
+            if self.isInObstacle(ag.state.p_pos):
                 self.collisionWithObstacle = True
                 self.collisionWithObstacleTime += 1
                 break
