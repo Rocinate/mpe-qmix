@@ -10,6 +10,7 @@ class CoverageWorld(World):
         self.num_landmark = num_landmark
         self.landmarks: List[Landmark] = []
         self.agents: List[Agent] = []
+        self.found = [False for _ in range(num_landmark)]
 
         # 对连通保持聚合力的修正
         self.contact_force *= comm_force_scale  # 修正拉力倍数，正常情况下都是0

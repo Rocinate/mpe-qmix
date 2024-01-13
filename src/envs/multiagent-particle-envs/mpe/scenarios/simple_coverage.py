@@ -27,12 +27,15 @@ REWARD = {
 }
 
 CONFIG = {
-    "r_cover": 0.25,
-    "r_comm": 0.8,
+    "num_detect": 0,
+    "r_comm": 1.0,
+    "big_cover": 0.25,
+    "small_cover": 0.25,
     "agent_size": 0.02,
     "landmark_size": 0.02,
     "energy": 5.0,
-    "max_speed": 1.0,
+    "fast_speed": 1.0,
+    "slow_speed": 1.0
 }
 
 class Scenario(BaseScenario):
@@ -56,15 +59,21 @@ class Scenario(BaseScenario):
 
         world.agents = [Agent() for _ in range(num_agents)]
         world.landmarks = [Landmark() for _ in range(num_landmark)]
-            
+
+        # coverage agent    
         for i, agent in enumerate(world.agents):
             agent.name = "agent_%d" % i
             agent.collide = False
             agent.silent = True
             agent.size = CONFIG["agent_size"]
-            agent.r_cover = CONFIG["r_cover"]
+            agent.r_cover = CONFIG["small_cover"]
             agent.r_comm = CONFIG["r_comm"]
-            agent.max_speed = CONFIG["max_speed"]
+            agent.max_speed = CONFIG["slow_speed"]
+
+        # detect agent
+        for agent in enumerate(world.agents[-CONFIG["num_detect"]:]):
+            agent.r_cover = CONFIG["big_cover"]
+            agent.max_speed = CONFIG["fast_speed"]
 
         for i, landmark in enumerate(world.landmarks):
             landmark.name = "poi_%d" % i
@@ -87,6 +96,12 @@ class Scenario(BaseScenario):
             agent.state.p_pos = np.array(pos_agents[i])
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
+        
+        # color for detect agents
+        for agent in world.agents[-CONFIG["num_detect"]:]:
+            agent.color = np.array([0.35, 0.85, 0.35])
+            agent.cover_color = np.array([0.05, 0.25, 0.05])
+            agent.comm_color = np.array([0.05, 0.35, 0.05])
 
         # random properties for landmarks
         for i, landmark in enumerate(world.landmarks):
