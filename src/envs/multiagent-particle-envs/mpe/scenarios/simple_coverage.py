@@ -11,11 +11,6 @@ obstacle = np.array([
     [-0.3, -0.3, -0.1, -0.1]
 ])
 
-obstancle_full = np.array([
-    [[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin]]
-    for xmin, ymin, xmax, ymax in obstacle
-])
-
 # 避免每次observation都需要reshape一次
 observation_obstacle = obstacle.reshape(-1)
 
@@ -210,5 +205,6 @@ class Scenario(BaseScenario):
         overall_info["outRate"] = world.outRange_time / world.episode_length
         overall_info["collisionWithOther"] = world.collisionWithOtherTime / world.episode_length
         overall_info["collisionWithObstacle"] = world.collisionWithObstacleTime / world.episode_length
+        overall_info["finished"] = world.finished
 
         return overall_info
