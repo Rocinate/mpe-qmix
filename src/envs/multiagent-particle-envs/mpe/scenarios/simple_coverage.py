@@ -65,6 +65,7 @@ class Scenario(BaseScenario):
             agent.r_cover = CONFIG["small_cover"]
             agent.r_comm = CONFIG["r_comm"]
             agent.max_speed = CONFIG["slow_speed"]
+            agent.detect = False
 
         # detect agent
         for agent in world.agents[-CONFIG["num_detect"]:]:
