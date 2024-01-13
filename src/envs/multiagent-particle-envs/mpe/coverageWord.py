@@ -203,7 +203,12 @@ class CoverageWorld(World):
                 dist = np.linalg.norm(poi.state.p_pos - agent.state.p_pos)
                 if dist <= agent.r_cover:
                     poi.found = True
-                    poi.consume += 2 * np.exp(-dist ** 2 / agent.r_cover ** 2) # 论文公式6, Sc = 2
+                    consume = 2 * np.exp(-dist ** 2 / agent.r_cover ** 2) # 论文公式6, Sc = 2
+                    # 侦察机覆盖能力弱
+                    if agent.detect:
+                        consume *= 0.1
+
+                    poi.consume += consume
 
             if poi.consume > 0.0:
                 # 限制覆蓋能量大小，最大為m_energy

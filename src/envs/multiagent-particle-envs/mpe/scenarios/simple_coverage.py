@@ -23,15 +23,15 @@ REWARD = {
 }
 
 CONFIG = {
-    "num_detect": 0,
+    "num_detect": 1,
     "r_comm": 1.0,
     "big_cover": 0.25,
-    "small_cover": 0.25,
+    "small_cover": 0.10,
     "agent_size": 0.02,
     "landmark_size": 0.02,
     "energy": 5.0,
     "fast_speed": 1.0,
-    "slow_speed": 1.0
+    "slow_speed": 0.5
 }
 
 class Scenario(BaseScenario):
@@ -70,6 +70,7 @@ class Scenario(BaseScenario):
         for agent in world.agents[-CONFIG["num_detect"]:]:
             agent.r_cover = CONFIG["big_cover"]
             agent.max_speed = CONFIG["fast_speed"]
+            agent.detect = True
 
         for i, landmark in enumerate(world.landmarks):
             landmark.name = "poi_%d" % i
@@ -156,19 +157,6 @@ class Scenario(BaseScenario):
         
         if world.collisionWithObstacle == False:
             rew += REWARD["no_collaps"]
-
-        # 相互碰撞惩罚
-        # for i, ag in enumerate(world.agents):
-        #     for j, ag2 in enumerate(world.agents):
-        #         if i < j:
-        #             dist = np.linalg.norm(ag.state.p_pos - ag2.state.p_pos)
-        #             if dist < 0.1:
-        #                 rew += REWARD["collision"]
-
-        # 障碍物碰撞惩罚
-        # for ag in world.agents:
-        #     if world.isInObstacle(ag.state.p_pos):
-        #         rew += REWARD["collision"]
 
         return rew
 
