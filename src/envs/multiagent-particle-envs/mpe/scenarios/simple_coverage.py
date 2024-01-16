@@ -19,24 +19,25 @@ REWARD = {
     "cover": 1,
     "done": 5,
     "no_collaps": 2,
-    "not_found": 0.1
+    "not_found": 2
 }
 
 CONFIG = {
-    "num_detect": 1,
+    "num_detect": 0,
     "r_comm": 1.0,
     "big_cover": 0.25,
-    "small_cover": 0.10,
+    "small_cover": 0.25,
     "agent_size": 0.02,
     "landmark_size": 0.02,
     "energy": 5.0,
     "fast_speed": 1.0,
-    "slow_speed": 0.5
+    "slow_speed": 1.0
 }
 
 class Scenario(BaseScenario):
     def make_world(self):
         # ugly implement, try to check if scared cout can catch this
+        print("visible global, check if 1 detect and other cover is executable")
         print(obstacle)
         print(REWARD, CONFIG)
 
@@ -129,9 +130,9 @@ class Scenario(BaseScenario):
 
         # 覆盖奖惩
         for poi in world.landmarks:
-            if not poi.found:
-                rew -= REWARD["not_found"]
-            elif not poi.done:
+            # if not poi.found:
+            #     rew -= REWARD["not_found"]
+            if not poi.done:
                 dists = [np.linalg.norm(ag.state.p_pos - poi.state.p_pos) for ag in world.agents]
                 rew -= min(dists)
                 # 距离poi最近的uav, 二者之间的距离作为负奖励, 该poi的energy_to_cover为乘数
@@ -165,12 +166,12 @@ class Scenario(BaseScenario):
         # get positions of all entities in this agent's reference frame
         entity_pos = []
         for entity in world.landmarks:  # world.entities:
-            if entity.found == False:
-                entity_pos.append([0, 0])
-                entity_pos.append([entity.m_energy])
-            else:
-                entity_pos.append(entity.state.p_pos - agent.state.p_pos)
-                entity_pos.append([max(entity.m_energy - entity.energy, 0)])
+            # if entity.found == False:
+            #     entity_pos.append([0, 0])
+            #     entity_pos.append([entity.m_energy])
+            # else:
+            entity_pos.append(entity.state.p_pos - agent.state.p_pos)
+            entity_pos.append([max(entity.m_energy - entity.energy, 0)])
 
         # communication of all other agents
         other_pos = []

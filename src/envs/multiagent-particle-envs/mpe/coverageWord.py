@@ -68,7 +68,7 @@ class CoverageWorld(World):
 
     def update_collision(self):
         self.collisionWithOther = False
-        self.collisionWithObstacle = False
+        self.collisionWithObstacle = True
         self.outRange = False
 
         # 检查出界
@@ -195,33 +195,35 @@ class CoverageWorld(World):
         return True if (sum(connect_mat) > 0).all() else False
 
     def update_energy(self):
-        unfinished_poi = [poi for poi in self.landmarks if not poi.done]
-        num_done = self.num_landmark - len(unfinished_poi)
+        num_done = 0
 
-        for poi in unfinished_poi:
-            for agent in self.agents:
-                dist = np.linalg.norm(poi.state.p_pos - agent.state.p_pos)
-                if dist <= agent.r_cover:
-                    poi.found = True
-                    consume = 2 * np.exp(-dist ** 2 / agent.r_cover ** 2) # 论文公式6, Sc = 2
-                    # 侦察机覆盖能力弱
-                    if agent.detect:
-                        consume *= 0.1
-
-                    poi.consume += consume
-
-            if poi.consume > 0.0:
-                # 限制覆蓋能量大小，最大為m_energy
-                poi.energy += poi.consume
-                if poi.energy > poi.m_energy:
-                    poi.consume -= poi.energy - poi.m_energy
-                    poi.energy = poi.m_energy
-                poi.just = True
-
-            if poi.energy >= poi.m_energy:
-                poi.done = True
-                poi.just = True
+        for poi in self.landmarks:
+            if poi.done:
                 num_done += 1
-            poi.color = np.array([0.25, 0.25 + poi.energy / poi.m_energy * 0.75, 0.25])
+            else:
+                for agent in self.agents:
+                    dist = np.linalg.norm(poi.state.p_pos - agent.state.p_pos)
+                    if dist <= agent.r_cover:
+                        poi.found = True
+                        consume = 2 * np.exp(-dist ** 2 / agent.r_cover ** 2) # 论文公式6, Sc = 2
+                        # 侦察机覆盖能力弱
+                        if agent.detect:
+                            consume *= 0.1
+
+                        poi.consume += consume
+
+                if poi.consume > 0.0:
+                    # 限制覆蓋能量大小，最大為m_energy
+                    poi.energy += poi.consume
+                    if poi.energy > poi.m_energy:
+                        poi.consume -= poi.energy - poi.m_energy
+                        poi.energy = poi.m_energy
+                    poi.just = True
+
+                if poi.energy >= poi.m_energy:
+                    poi.done = True
+                    poi.just = True
+                    num_done += 1
+                poi.color = np.array([0.25, 0.25 + poi.energy / poi.m_energy * 0.75, 0.25])
         self.coverage_rate = num_done / self.num_landmark
         self.finished = True if num_done == self.num_landmark else False
